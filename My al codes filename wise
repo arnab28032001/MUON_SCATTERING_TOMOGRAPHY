@@ -1,0 +1,575 @@
+Filename-sim.cc
+
+//for project 1
+
+#include<iostream>
+#include "G4RunManager.hh"
+#include "G4UImanager.hh"
+#include "G4VisManager.hh"
+#include "G4VisExecutive.hh"
+#include "G4UIExecutive.hh"
+#include "construction_project1.hh"
+#include "physics_project1.hh"
+#include "action_project1.hh"
+int main(int argc, char** argv)
+{
+	G4RunManager* runManager = new G4RunManager;
+	runManager->SetUserInitialization(new MyDetectorConstruction());// for detector construction
+	runManager->SetUserInitialization(new MyPhysicsList());// for Physics List
+	runManager->SetUserInitialization(new MyActionInitialization());
+	runManager->Initialize();
+	 
+	G4UIExecutive *ui =new G4UIExecutive(argc,argv);
+	 
+	G4VisManager *visManager = new G4VisExecutive();
+	visManager-> Initialize();
+	 
+	G4UImanager *UImanager = G4UImanager::GetUIpointer();
+	 
+	 UImanager->ApplyCommand("/vis/open OGL");
+	 UImanager->ApplyCommand("/vis/viewer/set/viewpointVector 1 1 1");
+	 
+	 //UImanager->ApplyCommand("/vis/viewer/set/targetPoint 0 0 0 cm");
+	 //UImanager->ApplyCommand("/vis/viewer/set/eyePosition 0 0 600 cm");
+	 //UImanager->ApplyCommand("/vis/viewer/panTo 0 0");
+	 //UImanager->ApplyCommand("/vis/viewer/zoom 1");
+	 //UImanager->ApplyCommand("/vis/viewer/set/style wireframe");
+	 UImanager->ApplyCommand("/vis/drawVolume");
+	 UImanager->ApplyCommand("vis/viewer/set/autoRefresh true");
+	 UImanager->ApplyCommand("/vis/scene/add/trajectories smooth");
+	 UImanager->ApplyCommand("/vis/scene/endOfEventAction accumulate"); 
+	 UImanager->ApplyCommand("/vis/enable");
+	 UImanager->ApplyCommand("/vis/viewer/flush");
+	 UImanager->ApplyCommand("/vis/scene/add/axes 0 0 0 100 cm");
+	 UImanager->ApplyCommand("/vis/viewer/update");
+	 ui->SessionStart();
+	 
+	
+
+
+	 
+	return 0;
+	
+}
+
+Filename-run_project1.hh
+#ifndef RUN_HH
+#define RUN_HH
+
+#include "G4UserRunAction.hh"
+#include "G4Run.hh"
+#include "G4SystemOfUnits.hh"
+#include <iostream>
+
+class MyRunAction : public G4UserRunAction {
+public:
+    MyRunAction();
+    virtual ~MyRunAction();
+
+    virtual void BeginOfRunAction(const G4Run*);
+    virtual void EndOfRunAction(const G4Run*);
+};
+
+#endif
+
+Filename-action_project1.cc
+
+#include "action_project1.hh"
+
+MyActionInitialization::MyActionInitialization()
+{}
+MyActionInitialization::~MyActionInitialization()
+{}
+
+void MyActionInitialization::Build() const
+{
+	 SetUserAction(new MyPrimaryGenerator());
+    	SetUserAction(new MyRunAction());
+}
+
+Filename-action_project1.hh
+
+#ifndef ACTION_HH
+#define ACTION_HH
+#include "G4VUserActionInitialization.hh"
+#include "generator_project1.hh"
+#include "run_project1.hh"
+class MyActionInitialization : public G4VUserActionInitialization
+{
+public:
+	MyActionInitialization();
+	~MyActionInitialization();
+	virtual void Build() const;
+};
+#endif
+
+Filename-CmakeLists.txt
+
+cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+option(GEANT4_USE_QT "Enable Qt visualization" ON)
+
+project(Simulation)
+
+find_package(Geant4 REQUIRED ui_all vis_all)
+
+include(${Geant4_USE_FILE})
+
+# CRY includes and library
+include_directories(/home/oem/cry_v1.7/src)
+link_directories(/home/oem/cry_v1.7)
+
+file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cc)
+file(GLOB headers ${PROJECT_SOURCE_DIR}/*.hh)
+
+add_executable(sim sim.cc ${sources} ${headers})
+
+# Link CRY as well
+target_link_libraries(sim ${Geant4_LIBRARIES} /home/oem/cry_v1.7/lib/libCRY.a)
+
+add_custom_target(Simulation DEPENDS sim)
+
+Filename-construction_project1.cc
+#include "construction_project1.hh"
+#include "G4VisAttributes.hh"
+#include "G4Tubs.hh"
+#include "G4Colour.hh"
+#include "detector_project1.hh"
+#include "G4SDManager.hh"
+#include "G4MultiFunctionalDetector.hh"
+#include "G4PSEnergyDeposit.hh"
+#include "detector_project1.hh"
+
+// for small detectors only
+MyDetectorConstruction::MyDetectorConstruction()
+{}
+MyDetectorConstruction::~MyDetectorConstruction()
+{}
+G4VPhysicalVolume *MyDetectorConstruction :: Construct()
+{
+	G4NistManager *nist=G4NistManager :: Instance();
+	//Materials
+	G4Material* air = nist->FindOrBuildMaterial("G4_AIR");
+	G4Material *detMat=nist->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
+        G4Material* concrete = nist->FindOrBuildMaterial("G4_CONCRETE");
+        G4Material* lead = nist->FindOrBuildMaterial("G4_Pb");
+        G4Material* steel = nist->FindOrBuildMaterial("G4_STAINLESS-STEEL");
+        G4Material* uranium = nist->FindOrBuildMaterial("G4_U");
+        
+        // Visual attributes
+        G4VisAttributes* red = new G4VisAttributes(G4Colour::Red());
+        G4VisAttributes* green = new G4VisAttributes(G4Colour::Green());
+        G4VisAttributes* blue = new G4VisAttributes(G4Colour::Blue());
+        G4VisAttributes* yellow=new G4VisAttributes(G4Colour::Yellow());
+        G4VisAttributes* white=new G4VisAttributes(G4Colour::White());
+        G4VisAttributes* gray = new G4VisAttributes(G4Colour(0.5, 0.5, 0.5));
+        red->SetForceSolid(true);
+        green->SetForceSolid(true);
+        blue->SetForceSolid(true);
+        yellow->SetForceSolid(true);
+        //gray->SetForceSolid(true);
+        //white->SetForceSolid(true);
+        
+	/*construction of the box or the world box that will contain everything*/
+	
+	
+	G4Box *solidWorld=new G4Box("solidWorld",1*m,1*m,1*m);/*box of length 1*2 m of each length of the cube, a cube of 200*200*200cm3 */
+	G4LogicalVolume *logicWorld =new G4LogicalVolume(solidWorld,air,"logicWorld");/*This is a logical volume that actually makes the maerial*/
+	G4VPhysicalVolume *physWorld=new G4PVPlacement(0, G4ThreeVector(0.,0.,0.),logicWorld, "physWorld",0,false,0,true);/*Places the logical volume and there is no Mother Volume*/
+	
+	/*Small detector Construction*/ 
+	// Detector dimensions
+	G4double detXY_small = 150.*cm;
+	G4double detZ_small = 0.2*cm;
+
+	// Material (can be plastic, silicon, etc. for real case; using Air here)
+	
+	G4double det_vert_gap=45.0*cm;
+	G4Box* solidDetector1 = new G4Box("SmallDetector", detXY_small/2, detXY_small/2, detZ_small/2);
+	G4LogicalVolume* logicDetector1_up = new G4LogicalVolume(solidDetector1,detMat, "SmallDetector_Up");
+	G4LogicalVolume* logicDetector1_down = new G4LogicalVolume(solidDetector1,detMat, "SmallDetector_Down");
+	logicDetector1_up->SetVisAttributes(white);
+	logicDetector1_down->SetVisAttributes(white);
+	//upper detector1
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,45.*cm),logicDetector1_up,"U1",logicWorld,false,0,true);
+	//lower detector1
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,-45.0*cm),logicDetector1_down,"D1",logicWorld,false,0,true);
+	//upper detector2
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,55.*cm),logicDetector1_up,"U2",logicWorld,false,0,true);
+	//lower detector2
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,-55.0*cm),logicDetector1_down,"D2",logicWorld,false,0,true);
+	//upper detector3
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,65.*cm),logicDetector1_up,"U3",logicWorld,false,0,true);
+	//lower detector3
+	new G4PVPlacement(0,G4ThreeVector(0.,0.,-65.0*cm),logicDetector1_down,"D3",logicWorld,false,0,true);
+	
+	// ROI - concrete cylinder
+           G4Tubs* roiCyl = new G4Tubs("roi", 0, 25*cm, 25*cm, 0,360*deg);
+           G4LogicalVolume* logicROI = new G4LogicalVolume(roiCyl, concrete, "ROI");
+           logicROI->SetVisAttributes(gray);
+           new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicROI, "ROI", logicWorld, false, 0);
+        // ROI - uranium cylinder
+            G4Tubs* uranium_box = new G4Tubs("uroi", 0, 5*cm, 15*cm, 0, 360*deg);
+            G4LogicalVolume* uranium_logicROI = new G4LogicalVolume(uranium_box, uranium, "UROI");
+            uranium_logicROI->SetVisAttributes(green);
+            new G4PVPlacement(0, G4ThreeVector(10.*cm, -10.*cm, 0.), uranium_logicROI, "UROI", logicWorld, false, 0);
+        
+	// ROI - lead(pb) cylinder
+            G4Tubs* lead_box = new G4Tubs("pbroi", 0, 5*cm, 15*cm, 0, 360*deg);
+            G4LogicalVolume* lead_logicROI = new G4LogicalVolume(lead_box, lead, "PBOI");
+            lead_logicROI->SetVisAttributes(blue);
+            new G4PVPlacement(0, G4ThreeVector(-10.*cm, -10.*cm, 0.), lead_logicROI, "PBOI", logicWorld, false, 0);
+	// ROI - stainless stell cylinder
+            G4Tubs* ss_box = new G4Tubs("ssroi", 0, 5*cm, 15*cm, 0, 360*deg);
+            G4LogicalVolume* ss_logicROI = new G4LogicalVolume(ss_box, steel, "SSROI");
+            ss_logicROI->SetVisAttributes(red);
+            new G4PVPlacement(0, G4ThreeVector(-10.*cm, 10.*cm, 0.), ss_logicROI, "SSROI", logicWorld, false, 0);
+            
+       // ROI - air cylinder
+            G4Tubs* air_box = new G4Tubs("air_roi", 0, 5*cm, 15*cm, 0, 360*deg);
+            G4LogicalVolume* air_logicROI = new G4LogicalVolume(air_box, air, "AIR_ROI");
+            air_logicROI->SetVisAttributes(yellow);
+            new G4PVPlacement(0, G4ThreeVector(10.*cm, 10.*cm, 0.), air_logicROI, "AIR_ROI", logicWorld, false, 0);
+	/*Medium detector Construction
+	// Detector dimensions
+	G4double detXY_med = 120.*cm;
+	G4double detZ_med = 0.2*cm;
+
+	// Material (can be plastic, silicon, etc. for real case; using Air here)
+	//upper detector
+	G4Material* detMat_med = nist->FindOrBuildMaterial("G4_AIR");
+	
+	G4Box* solidDetector2 = new G4Box("MediumDetector", detXY_med/2, detXY_med/2, detZ_med/2);
+	G4LogicalVolume* logicDetector2 = new G4LogicalVolume(solidDetector2, detMat_med, "MediumDetector");
+	logicDetector2->SetVisAttributes(medDetVis);
+	G4VPhysicalVolume *physDetector_up_med=new G4PVPlacement(0,G4ThreeVector(0.,0.,95.*cm),logicDetector2,"physMedDetectorUp",logicWorld,false,0,true);
+	//lower detector
+	G4VPhysicalVolume *physDetector_down_med=new G4PVPlacement(0,G4ThreeVector(0.,0.,45.*cm),logicDetector2,"physMedDetectorDown",logicWorld,false,0,true);*/
+	
+	
+	/*Large detector Construction
+	// Detector dimensions
+	G4double detXY_large = 150.*cm;
+	G4double detZ_large = 0.2*cm;
+
+	// Material (can be plastic, silicon, etc. for real case; using Air here)
+	//upper detector
+	G4Material* detMat_large = nist->FindOrBuildMaterial("G4_AIR");
+	
+	G4Box* solidDetector3 = new G4Box("LargeDetector", detXY_large/2, detXY_large/2, detZ_large/2);
+	G4LogicalVolume* logicDetector3 = new G4LogicalVolume(solidDetector3, detMat_large, "LargeDetector");
+	logicDetector3->SetVisAttributes(largeDetVis);
+	G4VPhysicalVolume *physDetector_up_large=new G4PVPlacement(0,G4ThreeVector(0.,0.,185.*cm),logicDetector3,"physMLargeDetectorUp",logicWorld,false,0,true);
+	//lower detector
+	G4VPhysicalVolume *physDetector_down_large=new G4PVPlacement(0,G4ThreeVector(0.,0.,135.*cm),logicDetector3,"physLargeDetectorDown",logicWorld,false,0,true);*/
+	
+	G4SDManager* sdManager = G4SDManager::GetSDMpointer();
+	MySensitiveDetector* detectorSD = new MySensitiveDetector("MyDetectorSD");
+	sdManager->AddNewDetector(detectorSD);
+	logicDetector1_up->SetSensitiveDetector(detectorSD);
+	logicDetector1_down->SetSensitiveDetector(detectorSD);
+	
+	/*
+	G4SDManager* sdManager = G4SDManager::GetSDMpointer();
+
+	MySensitiveDetector* upSD = new MySensitiveDetector("UpperSD");
+	sdManager->AddNewDetector(upSD);
+	logicDetector1->SetSensitiveDetector(upSD);  // or medium/large logic volumes*/
+
+	
+	
+	
+	return physWorld;
+}
+
+void MyDetectorConstruction::ConstructSDandField() {}
+
+Filename-construction_project1.hh
+#ifndef CONSTRUCTION_HH
+#define CONSTRUCTION_HH
+
+#include "G4VUserDetectorConstruction.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4LogicalVolume.hh"
+#include "G4Box.hh"
+#include "G4PVPlacement.hh"
+#include "G4NistManager.hh"
+#include "G4SystemOfUnits.hh"
+
+class MyDetectorConstruction: public G4VUserDetectorConstruction
+{
+public:
+	MyDetectorConstruction();
+	~MyDetectorConstruction();
+	virtual G4VPhysicalVolume *Construct();
+private:
+	G4LogicalVolume *logicDetector;
+	virtual void ConstructSDandField();// consturcting sensitive detector and field
+};
+#endif
+
+Filename-cry_setup.txt
+
+Primary muon
+Altitude 0
+Latitude 22.74
+Subboxlength 100
+ReturnMuons 1
+EnergyUnits GeV
+Source 0 0 150
+
+Filename-detector_project1.cc
+#include "detector_project1.hh"
+#include "G4Step.hh"
+#include "G4Track.hh"
+#include "G4TouchableHistory.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4RunManager.hh"
+#include <iostream>
+#include <fstream>
+
+std::ofstream outputFile("hits_output.csv", std::ios::out);
+
+MySensitiveDetector::MySensitiveDetector(const G4String& name)
+    : G4VSensitiveDetector(name)
+{
+    if (!outputFile.is_open()) {
+        G4cerr << "Error opening output file!" << G4endl;
+    } else {
+        outputFile << "eventID,trackID,detectorName,x(cm),y(cm),z(cm),px,py,pz,energy(MeV)\n" << std::endl;
+    }
+}
+
+MySensitiveDetector::~MySensitiveDetector()
+{
+    if (outputFile.is_open()) {
+        outputFile.close();
+    }
+}
+
+G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory*)
+{
+
+
+	auto pre = step->GetPreStepPoint();
+    	auto track = step->GetTrack();
+
+    	G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    	G4int trackID = track->GetTrackID();
+    	G4ThreeVector pos = pre->GetPosition() / cm;
+    	G4ThreeVector mom = track->GetMomentumDirection();
+    	G4double energy = track->GetKineticEnergy() / MeV;
+    	G4String volName = pre->GetTouchableHandle()->GetVolume()->GetName();
+	G4cout << "Hit recorded!" << G4endl;
+    	outputFile << eventID << ","
+            	<< trackID << ","
+            	<< volName << ","
+            	<< pos.x() << "," << pos.y() << "," << pos.z() << ","
+            	<< mom.x() << "," << mom.y() << "," << mom.z() << ","
+            	<< energy << "\n";
+        
+
+    
+    /*G4double edep = step->GetTotalEnergyDeposit();
+    if (edep == 0.) return false;
+
+    G4StepPoint* prePoint = step->GetPreStepPoint();
+    G4ThreeVector pos = prePoint->GetPosition();
+    G4String particleName = step->GetTrack()->GetDefinition()->GetParticleName();
+    G4String volName = prePoint->GetTouchableHandle()->GetVolume()->GetName();
+
+    if (outputFile.is_open()) {
+        outputFile << volName << "," 
+                   << particleName << ","
+                   << edep/MeV << ","
+                   << pos.x()/cm << ","
+                   << pos.y()/cm << ","
+                   << pos.z()/cm << std::endl;
+    }*/
+
+    return true;
+}
+Filename-detector_project1.hh
+#ifndef DETECTOR_HH
+#define DETECTOR_HH
+
+#include "G4VSensitiveDetector.hh"
+#include "G4Step.hh"
+#include "G4HCofThisEvent.hh"
+#include "G4TouchableHistory.hh"
+#include "G4ThreeVector.hh"
+#include "G4SDManager.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4StepPoint.hh"
+#include "G4Track.hh"
+#include <fstream>
+
+class MySensitiveDetector : public G4VSensitiveDetector {
+public:
+    MySensitiveDetector(const G4String& name);
+    virtual ~MySensitiveDetector();
+
+    virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* hist);
+
+private:
+    static std::ofstream fOutputFile;
+};
+
+#endif
+
+Filename-generator_project1.cc
+#include "generator_project1.hh"
+#include "G4ParticleTable.hh"
+#include "G4SystemOfUnits.hh"
+#include "Randomize.hh"
+#include "G4Event.hh"
+#include "CRYSetup.h"
+#include <fstream>
+
+MyPrimaryGenerator::MyPrimaryGenerator() {
+    std::ifstream inputFile("cry_setup.txt");  // your CRY setup file
+    std::string setupStr((std::istreambuf_iterator<char>(inputFile)),
+                         std::istreambuf_iterator<char>());
+
+    CRYSetup* crySetup = new CRYSetup(setupStr, "/home/oem/cry_v1.7/data/");
+    cryGen = new CRYGenerator(crySetup);
+    
+
+    particleGun = new G4ParticleGun(1);
+    particleTable = G4ParticleTable::GetParticleTable();
+}
+
+MyPrimaryGenerator::~MyPrimaryGenerator() {
+   delete particleGun;
+    delete cryGen;
+}
+
+void MyPrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
+    std::vector<CRYParticle*>* particles = new std::vector<CRYParticle*>;
+    cryGen->genEvent(particles);
+
+    for (auto p : *particles) {
+        G4int name = p->PDGid();
+        G4ThreeVector pos(p->x()*cm, p->y()*cm, p->z()*cm);
+        G4ThreeVector mom(p->u(), p->v(), p->w());
+        mom = mom.unit();
+
+        G4ParticleDefinition* particleDef = particleTable->FindParticle(name);
+        if (!particleDef) continue;
+        G4double xRange = 77.5 * cm;
+	G4double yRange = 40.0 * cm;
+	G4double zPos   = 65.0 * cm;
+	
+	// Generate random X and Y within that range
+	G4double x = (G4UniformRand() - 0.5) * xRange;  // random between -100 cm and +100 cm
+	G4double y = (G4UniformRand() - 0.5) * yRange;  // random between -100 cm and +100 cm
+	
+	// Set the randomized position
+	G4ThreeVector position(x, y, zPos);
+	particleGun->SetParticlePosition(position);
+	
+	// Momentum direction always downward (-z)
+	G4ThreeVector momDir(0., 0., -1.);  // pointing down
+	particleGun->SetParticleMomentumDirection(momDir);
+	// Particle definition and energy as before
+	particleGun->SetParticleDefinition(particleDef);
+	particleGun->SetParticleEnergy(p->ke() * MeV);
+	
+	// Generate the primary vertex
+	particleGun->GeneratePrimaryVertex(anEvent);
+
+	
+        /*particleGun->SetParticleDefinition(particleDef);
+        particleGun->SetParticlePosition(G4ThreeVector(0., 0., 100. * cm));//Particle will hit first detector then the materials and then the second detector
+        particleGun->SetParticleMomentumDirection(mom);
+        particleGun->SetParticleEnergy(p->ke()*MeV);
+        particleGun->GeneratePrimaryVertex(anEvent);*/
+    }
+
+    for (auto p : *particles) delete p;
+    delete particles;
+}
+
+Filename-generator_project1.hh
+#ifndef GENERATOR_HH
+#define GENERATOR_HH
+
+#include "G4VUserPrimaryGeneratorAction.hh"
+#include "CRYGenerator.h"
+#include "CRYSetup.h"
+#include "CRYParticle.h"
+#include "G4ParticleGun.hh"
+#include <vector>
+
+
+class MyPrimaryGenerator : public G4VUserPrimaryGeneratorAction {
+public:
+    MyPrimaryGenerator();
+    ~MyPrimaryGenerator();
+    virtual void GeneratePrimaries(G4Event* anEvent);
+
+private:
+    CRYGenerator* cryGen;
+    G4ParticleTable* particleTable;
+    G4ParticleGun* particleGun;
+};
+
+
+#endif
+Filename-physics_project1.cc
+#include "physics_project1.hh"
+
+MyPhysicsList::MyPhysicsList()
+{
+	RegisterPhysics (new G4EmStandardPhysics());
+	RegisterPhysics (new G4OpticalPhysics());
+	//RegisterPhysics(new G4MuonPhysics());
+	RegisterPhysics(new G4DecayPhysics());
+}
+MyPhysicsList::~MyPhysicsList()
+{}
+Filename- physics_project1.hh
+#ifndef PHYSICS_HH
+#define PHYSICS_HH
+#include "G4VModularPhysicsList.hh"
+#include "G4EmStandardPhysics.hh"
+#include "G4OpticalPhysics.hh"
+//#include "G4MuonPhysics.hh"
+#include "G4DecayPhysics.hh"
+
+class MyPhysicsList : public G4VModularPhysicsList
+{
+public:
+	MyPhysicsList();
+	~MyPhysicsList();
+
+};
+
+
+#endif
+
+Filename-run_project1.cc
+#include "run_project1.hh"
+#include "G4Run.hh"
+#include "G4RunManager.hh"
+#include "G4SystemOfUnits.hh"
+
+MyRunAction::MyRunAction() : G4UserRunAction() {
+    // Constructor: any initial setup here
+}
+
+MyRunAction::~MyRunAction() {
+    // Destructor
+}
+
+void MyRunAction::BeginOfRunAction(const G4Run* run) {
+    G4int runID = run->GetRunID();
+    G4cout << "### Run " << runID << " started." << G4endl;
+}
+
+void MyRunAction::EndOfRunAction(const G4Run* run) {
+    G4int nEvents = run->GetNumberOfEvent();
+    G4cout << "### Run " << run->GetRunID() << " ended with " << nEvents << " events." << G4endl;
+}
+
+
+

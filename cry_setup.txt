@@ -1,0 +1,7 @@
+Primary muon
+Altitude 0
+Latitude 22.74
+Subboxlength 100
+ReturnMuons 1
+EnergyUnits GeV
+Source 0 0 60
