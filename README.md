@@ -1,5 +1,7 @@
 # MUON_SCATTERING_TOMOGRAPHY
-This Project Deals With Imaging Nuclear Wastes Using Muon Scattering Tomography. A Machine Learning Algorithm POCA(Point of Closest Approach) is used for the primary part of this project for the imaging purpose.
-A simulation is performed using GEANT4. A geometry is made in that simualtion and data is collected from that simulation.
-The generated data is analysed using different algorithms of machine learning.
-This is an ongoing project and not yet completed.
+This project aims to image Nuclear Wastes contained in Containers in a non-invasive and non-destructive way.
+The work is performed on a simulated data of different geometries. The simulation is done using Geant4 framework and Cosmic Ray Shower Library as event generator.
+The path reconstruction is done using Point of Closest Approach (PoCA) method.
+The imaging of the final clustered data is done using two machine learning algorithms, one is Pattern Recognition Method (PRM) and another is Diffusion plus PRM method.
+Material identification is done using both supervised and unsupervised machine learning algorihtms.
+The project is under progress
