@@ -1,0 +1,17 @@
+# Macro file for large run
+# To be run preferably in batch, without graphics:
+# ./main run.mac    # Note: To run using macro set GUI = true
+
+/run/numberOfThreads 32
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+#/run/printProgress 10000
+
+# Event 2496960;   // For 1hr exposure for 204x204 cm2 area
+
+# Run 0
+/run/beamOn 2496960       // 1 hr
+#/run/beamOn 59927040      // 24 hr 
+
+
