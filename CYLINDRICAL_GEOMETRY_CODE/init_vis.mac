@@ -1,0 +1,8 @@
+/run/initialize
+/control/execute vis.mac
+/random/setSeeds 368592 58755  # for each run different seeds should be used
+
+# compare number of events to approximate muon exposure, 1 muon/cm^2/second
+/run/printProgress 100
+
+/run/beamOn 100
